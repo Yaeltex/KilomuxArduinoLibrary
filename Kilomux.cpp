@@ -55,7 +55,7 @@ void Kilomux::init(void){
     }
     
 	// This method sets the ADC prescaler, to change the sample rate
-    setADCprescaler(PS_32);               // PS_16 (1MHz or 50000 samples/s)
+    setADCprescaler(PS_16);               // PS_16 (1MHz or 50000 samples/s)
                                           // PS_32 (500KHz or 31250 samples/s)
                                           // PS_64 (250KHz or 16666 samples/s)
                                           // PS_128 (125KHz or 8620 samples/s)
