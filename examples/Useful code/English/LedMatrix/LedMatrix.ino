@@ -1,10 +1,6 @@
 /*
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
- * ---
- * LICENSE INFO
- * Kilomux Shield by Yaeltex is released by
- * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
  * ----
  * Description: This code drives an LED matrix with the outputs of the Kilomux shield.
  *              The example can be used with up to 8 rows and 8 columns, setting the ROWS and COLS labels accordingly.
