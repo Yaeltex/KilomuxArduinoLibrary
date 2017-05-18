@@ -2,6 +2,23 @@
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
  * ---
+ * LICENSE INFO
+ * This file is part of Kilomux Arduino Library.
+ *
+ * Kilomux Arduino Library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Kilomux Arduino Library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Kilomux Arduino Library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ---
  * Description: Reads one analog input and sends value over serial or MIDI.
  *              This example is for use with the Kilomux Shield.
  * 

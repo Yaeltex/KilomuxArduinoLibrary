@@ -2,6 +2,23 @@
  * Autor: Franco Grassano - YAELTEX
  * Fecha: 18/02/2016
  * ----
+ * LICENSE INFO
+ * This file is part of Kilomux Arduino Library.
+ *
+ * Kilomux Arduino Library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Kilomux Arduino Library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Kilomux Arduino Library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ---
  * Descripción: Uso de un sensor ultrasónico HC-SR04. Se lee el sensor y se envía un mensaje MIDI CC, cuando la lectura cambia.
  *              Se realiza un filtrado de media móvil para suavizar las lecturas, y se previene que el sensor lea 0 cuando el 
  *              objeto se aleja demasiado, o sale de la línea de sensado.

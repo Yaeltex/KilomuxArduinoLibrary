@@ -2,10 +2,23 @@
 /*
  * Autor: Franco Grassano - YAELTEX
  * ---
- * INFORMACIÓN DE LICENCIA
- * Kilo Mux Shield por Yaeltex se distribuye bajo una licencia
- * Creative Commons Atribución-CompartirIgual 4.0 Internacional - http://creativecommons.org/licenses/by-sa/4.0/
- * ----
+ * LICENSE INFO
+ * This file is part of Kilomux Arduino Library.
+ *
+ * Kilomux Arduino Library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Kilomux Arduino Library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Kilomux Arduino Library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ---
  * Código para el manejo de los integrados 74HC595 tomado de http://bildr.org/2011/02/74HC595/
  * Librería de multiplexado (modificada) tomada de http://mayhewlabs.com/products/mux-shield-2
  * Librería para el manejo del sensor de ultrasonido tomada de http://playground.arduino.cc/Code/NewPing

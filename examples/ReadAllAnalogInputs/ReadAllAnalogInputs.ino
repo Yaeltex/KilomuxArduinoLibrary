@@ -3,6 +3,23 @@
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
  * ----
+ * LICENSE INFO
+ * This file is part of Kilomux Arduino Library.
+ *
+ * Kilomux Arduino Library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Kilomux Arduino Library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Kilomux Arduino Library.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ---
  * Description: Reads several analog inputs for any of the shield's ports, and displays them on the serial monitor.
  *              Change MUX_START and MUX_END to read other inputs.
  *              To read MUX_B, change parameter in analogReadKM function.
