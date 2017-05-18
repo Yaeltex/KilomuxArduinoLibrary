@@ -1,4 +1,4 @@
-Código para la versión 1 del KiloMux Shield. 
+Código para la [versión 1 del KiloMux Shield](https://github.com/Yaeltex/Kilomux-shield/tree/master/PCB/v1)
 
 Esta versión es la que se puede fabricar en casa, diseñada en Fritzing.
 
