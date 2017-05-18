@@ -1,10 +1,6 @@
 
 /*
 Autor: Franco Grassano - YAELTEX
----
-INFORMACIÓN DE LICENCIA
-Kilo Mux Shield por Yaeltex se distribuye bajo una licencia
-Creative Commons Atribución-CompartirIgual 4.0 Internacional - http://creativecommons.org/licenses/by-sa/4.0/
 ----
 Código para el manejo de los integrados 74HC595 tomado de http://bildr.org/2011/02/74HC595/
 Librería de multiplexado (modificada) tomada de http://mayhewlabs.com/products/mux-shield-2
