@@ -2,11 +2,7 @@
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
  * ---
- * LICENSE INFO
- * Kilomux Shield by Yaeltex is released by
- * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
- * ----
- * Description: Blink an LED.
+  * Description: Blink an LED.
  *              This example is for use with the Kilomux Shield.
  * 
  * Kilomux Library is available at https://github.com/Yaeltex/Kilomux-Shield/blob/master/Arduino%20Code/KilomuxShield%20Library/KilomuxShield.zip
