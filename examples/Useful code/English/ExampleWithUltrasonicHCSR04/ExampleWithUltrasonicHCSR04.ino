@@ -1,10 +1,6 @@
 /*
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
- * ---
- * LICENSE INFO
- * Kilomux Shield by Yaeltex is released by
- * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
  * ----
  * Description: Use of an ultrasonic distance sensor HC-SR04. Reads sensor and sends MIDI CC message, whenever it changed.
  *              Uses moving average filter to smooth readings, and prevents reading from going to 0 whenever maximum distance is overreached, 
