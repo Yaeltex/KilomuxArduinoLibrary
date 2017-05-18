@@ -1,7 +1,7 @@
 /*
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
- * Buenos Aires, Argentina - 2015
+ * Buenos Aires, Argentina
  * ---
  *
  * Header file, with class definition
