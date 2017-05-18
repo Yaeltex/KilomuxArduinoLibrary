@@ -2,10 +2,6 @@
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
  * ---
- * LICENSE INFO
- * Kilomux Shield by Yaeltex is released by
- * * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
- * ----
  * Description: Performs Knight Rider over shield's 16 outputs.
  *              This example is for use with the Kilomux Shield.
  * 
