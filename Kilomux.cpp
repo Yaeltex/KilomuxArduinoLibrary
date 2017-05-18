@@ -1,12 +1,8 @@
 /*
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
- * Buenos Aires, Argentina - 2015
+ * Buenos Aires, Argentina
  * ---
- * LICENSE INFO
- * Kilomux Shield library for Arduino, by Yaeltex, is released by
- * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
- * ----
  *
  * Definition of methods of the Kilomux class
  *
