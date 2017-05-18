@@ -1,12 +1,8 @@
 /*
  * Autor: Franco Grassano - YAELTEX
  * Fecha: 18/02/2016
- * ---
- * INFORMACIÓN DE LICENCIA
- * Kilomux Shield por Yaeltex se distribuye bajo una licencia
- * Creative Commons Atribución-CompartirIgual 4.0 Internacional - http://creativecommons.org/licenses/by-sa/4.0/
  * ----
- * Description: Este código maneja una matriz de LEDs con las salidas del Kilomux shield.
+ * Descripción: Este código maneja una matriz de LEDs con las salidas del Kilomux shield.
  *              El ejemplo 
  *              Es importante conectar las columnas y las filas a un puerto de salida diferente (OUT-1 y OUT-2), y especificar 
  *              a cual de ellos se conectaron las columnas en la etiqueta COL_PORT.
