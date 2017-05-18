@@ -2,10 +2,6 @@
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
  * ---
- * LICENSE INFO
- * Kilomux Shield by Yaeltex is released by
- * * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
- * ----
  * Description: Reads button setting internal PullUp resistor, and sends its state over serial or MIDI.
  *              Choose which, by commenting one of the lines, where it is indicated.
  *              This example is for use with the Kilomux Shield.
