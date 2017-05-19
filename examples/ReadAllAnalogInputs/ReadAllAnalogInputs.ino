@@ -2,24 +2,11 @@
 /*
  * Author: Franco Grassano - YAELTEX
  * Date: 18/02/2016
- * ----
- * LICENSE INFO
- * This file is part of Kilomux Arduino Library.
- *
- * Kilomux Arduino Library is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Kilomux Arduino Library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Kilomux Arduino Library.  If not, see <http://www.gnu.org/licenses/>.
- *
  * ---
+ * LICENSE INFO
+ * Kilomux Shield by Yaeltex is released by
+ * * Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) - http://creativecommons.org/licenses/by-sa/4.0/
+ * ----
  * Description: Reads several analog inputs for any of the shield's ports, and displays them on the serial monitor.
  *              Change MUX_START and MUX_END to read other inputs.
  *              To read MUX_B, change parameter in analogReadKM function.
@@ -67,7 +54,7 @@ Kilomux KmShield;             // Kilomux Shield
 
 unsigned int analogData[NUM_OF_INPUTS_TO_READ];         // Variable to store analog values
 unsigned int analogDataPrev[NUM_OF_INPUTS_TO_READ];     // Variable to store previous analog values
-byte analogDirection[NUM_OF_INPUTS_TO_READ];            // "static" means the value is stored and can be used next time this function runs
+byte analogDirection[NUM_OF_INPUTS_TO_READ];            // Variable to store current direction of change
 
 void setup() {
   KmShield.init();                                    // Initialize Kilomux shield hardware
@@ -87,24 +74,25 @@ void setup() {
 }
 
 void loop() {  
-  for (int input = MUX_A1_START; input <= MUX_A1_END; input++){      // Sweeps all 8 multiplexer inputs of Mux A1 header
-    analogData[input] = KmShield.analogReadKm(MUX_A, input);           // Read analog value from MUX_A and channel 'input'
+  for (int input = 0; input <= NUM_OF_INPUTS_TO_READ; input++){      // Sweeps all 8 multiplexer inputs of Mux A1 header
+    byte mux = input < 16 ? MUX_A : MUX_B;           // MUX 0 or 1
+    byte muxChannel = input % NUM_MUX_CHANNELS;         // CHANNEL 0-15
+    analogData[input] = KmShield.analogReadKm(mux, muxChannel)>>3;         // Read analog value from MUX_A and channel 'input'
+                                                                           // analogData >> 3, divides by 2^3 = 8, the value, to adjust to midi resolution (1024/8 = 128)
     
     if(!IsNoise(input)){
       #if defined(SERIAL_COMMS)
-      Serial.print("IN "); Serial.print(CCmap[input]);                        // Print all values in a format like
-      Serial.print(": ");                                                     //    IN 0: 581  IN 1: 230 ...... IN 8: 500 
-      Serial.print(analogData[input]>>3);                                     //    IN 0: 582  IN 1: 230 ...... IN 8: 500
-      Serial.print("\t");                                                     //    IN 0: 583  IN 1: 230 ...... IN 8: 500
+      Serial.print("IN "); Serial.print(CCmap[input]);                        
+      Serial.print(": ");                                                     
+      Serial.print(analogData[input]);                                     
+      Serial.print("\t");                                                     
+      Serial.println("");                                             // New Line
       #elif defined(MIDI_COMMS)
-      MIDI.sendControlChange(CCmap[input], analogData[input]>>3, MIDI_CHANNEL);  // Or send midi message. 
-                                                                                 // analogData >> 3, divides by 2^3 = 8, the value, to adjust to midi resolution (1024/8 = 128)
+      MIDI.sendControlChange(CCmap[input], analogData[input], MIDI_CHANNEL);  // Or send midi message. 
+                                                                              
       #endif  
     }
   }                                                                  
-  #if defined(SERIAL_COMMS)
-  Serial.println("");                                                // New Line
-  #endif
 }
 
 // Thanks to Pablo Fullana for the help with this function!
