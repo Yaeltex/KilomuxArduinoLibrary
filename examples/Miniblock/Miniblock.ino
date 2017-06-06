@@ -35,7 +35,7 @@
 void setup(); // Esto es para solucionar el bug que tiene Arduino al usar los #ifdef del preprocesador
 
 //#define DEBUG
-//#define MIDI_COMMS
+#define MIDI_COMMS
 
 #if defined(DEBUG)
 #include <EEPROMex.h>
@@ -129,7 +129,7 @@ byte digitalOutState[MAX_BANKS][NUM_LEDS];                      // Estado de los
 byte currentProgram[MAX_BANKS][16] = {};
 
 // Shifters, buttons and LEDs
-byte Input, Output, Check=1;
+byte Input, Output, Check = 1;
 byte prevInputsState = 0;
 byte newInputsState = 0;
 unsigned long antMillisCheckShiftButtons = 0;
@@ -142,10 +142,10 @@ byte prevBank, currBank = 0;
 bool ledModeMatrix, newBank = true, changeDigOutState, midiThru;
 //bool ultrasoundPresent;
 bool firstBoot = false, firstRead = true;
-bool blinkStatusLEDon = 0, configMode = 0, receivingSysEx = 0;
+bool flagBlinkStatus = 0, configMode = 0, receivingSysEx = 0;
 bool outputBlinkState = 0;
 unsigned long millisPrevLED = 0;               // Variable para guardar ms
-static byte blinkStatusCount = 0;
+static byte blinkCountStatus = 0;
 uint16_t packetSize;
 unsigned long prevBlinkMillis = 0;
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -168,105 +168,99 @@ void setup() {
 
   // Initialize Kilomux shield
   KMShield.init();
-  KMShield.setADCprescaler(PS_32);    // Override initial setting
+  //KMShield.setADCprescaler(PS_16);    // Override initial setting
   // Initialize EEPROM handling library
   KMS::initialize();
-  
+
   prevBlinkMillis = millis();
 
 #if !defined(MIDI_COMMS)
   Serial.print("Kilowhat protocol: v"); Serial.println(gD.protocolVersion());
 #endif
-      
+
   ResetConfig(CONFIG_OFF);
 
-  #if defined(DEUG)
-    #if defined(MIDI_COMMS)
-    delay(10000);
-    LedWrite(7, HIGH); delay(200); LedWrite(7, LOW); delay(200); LedWrite(7, HIGH); delay(200); LedWrite(7, LOW);
-    #else
-    avgTimes = EEPROM.readLong(500);
-    Serial.println(avgTimes);  
-    while(1);
-    #endif
-  #endif
+#if defined(DEUG)
+#if defined(MIDI_COMMS)
+  delay(10000);
+  LedWrite(7, HIGH); delay(200); LedWrite(7, LOW); delay(200); LedWrite(7, HIGH); delay(200); LedWrite(7, LOW);
+#else
+  avgTimes = EEPROM.readLong(500);
+  Serial.println(avgTimes);
+  while (1);
+#endif
+#endif
 }
 
 void loop() {
-// DEBUG ////////////////////////////
+  // DEBUG ////////////////////////////
 #if defined(DEUG)
-   antMicrosLoop = micros();
+  antMicrosLoop = micros();
 #endif
-/////////////////////////////////////
+  /////////////////////////////////////
 #if defined(MIDI_COMMS)
-  if (MIDI.read()){
+  if (MIDI.read()) {
     ReadMidi();
   }
 #else
-  if (Serial.available()){
+  if (Serial.available()) {
     ReadSerial();
   }
 #endif
-  
+
   if (!firstBoot) {
-    if (blinkStatusLEDon && blinkStatusCount) StatusLEDupdate();
-    
-    if (!receivingSysEx){
-      
+    if (flagBlinkStatus && blinkCountStatus) blinkStatusLED();
+
+    if (!receivingSysEx) {
+
       UpdateDigitalOutputs();
       if (millis() - prevBlinkMillis > OUTPUT_BLINK_INTERVAL) {         // Si transcurrieron más de X ms desde la ultima actualización,
         ToggleBlinkOutputs();
       }
-      
-      if(millis()-antMillisCheckShiftButtons > INTERVALO_CHECK_SHIFT_INPUTS_MS){
+
+      if (millis() - antMillisCheckShiftButtons > INTERVALO_CHECK_SHIFT_INPUTS_MS) {
         antMillisCheckShiftButtons = millis();
-        buttonScan();
+        pinReadInputs();
       }
       // if (ultrasoundPresent) ReadSensorUS();
-      
+
       ReadInputs();
+
     }
   }
-  else{
-    /*
-     * FIRST BOOT MODE: Status LED blinks waiting for configuration.
-     */
-    
-    if(!(millis() % 500)){
-      blinkStatusLEDon = 1;
-      blinkStatusCount = 1;
+  else {
+    if (!(millis() % 500)) {
+      flagBlinkStatus = 1;
+      blinkCountStatus = 1;
     }
-    if (blinkStatusLEDon && blinkStatusCount) StatusLEDupdate();
-    ReadInputs(); 
+    if (flagBlinkStatus && blinkCountStatus) blinkStatusLED();
+    ReadInputs();
   }
 
 #if defined(DEBUG)
-  loopTime = micros()-antMicrosLoop;
-  if(counter < numTimeReadings){
+  loopTime = micros() - antMicrosLoop;
+  if (counter < numTimeReadings) {
     sumTimes += loopTime;
     counter++;
   }
-  else{
-    avgTimes = sumTimes/numTimeReadings;
-    #if defined(MIDI_COMMS)
+  else {
+    avgTimes = sumTimes / numTimeReadings;
+#if defined(MIDI_COMMS)
     EEPROM.writeLong(500, avgTimes);
-    sumTimes = 0; 
-    avgTimes = 0; 
+    sumTimes = 0;
+    avgTimes = 0;
     counter = 0;
     LedWrite(7, HIGH); delay(200); LedWrite(7, LOW); delay(200); LedWrite(7, HIGH); delay(200); LedWrite(7, LOW);
-    while(1);
-    #else
+    while (1);
+#else
     Serial.println("");
-    Serial.print("Promedio de loop times para ");Serial.print(numTimeReadings);Serial.print(" loops: ");Serial.println(avgTimes);
-    #endif
+    Serial.print("Promedio de loop times para "); Serial.print(numTimeReadings); Serial.print(" loops: "); Serial.println(avgTimes);
+#endif
   }
 #endif
-/////////////////////////////////////
+  /////////////////////////////////////
 }
 
-/*
- *  Reload configuration from EEPROM.
- */
 void ResetConfig(bool newConfig) {
   pinMode(LED_BUILTIN, OUTPUT);
   // Reload global data from EEPROM
@@ -276,58 +270,54 @@ void ResetConfig(bool newConfig) {
   KMS::setBank(currBank);
   configMode = newConfig;
   firstRead = true;
-  
+
   if (gD.isValid()) {
-    
-    if (gD.protocolVersion() == 1){
+
+    if (gD.protocolVersion() == 1) {
       packetSize = 57;
-    }else{
+    } else {
       packetSize = 57; // Default.
     }
 
-    // Off first-boot mode
-    firstBoot = false;
-    
     //Shifters and LEDs and buttons
     pinMode(inputCommonPin, INPUT);//Input from buttons
-    KMShield.digitalWritePortsKm(0xFF,0x00);
+    KMShield.digitalWritePortsKm(0xFF, 0x00);
     prevInputsState = digitalRead(inputCommonPin);
 
-    // Load general configuration
     ledModeMatrix = gD.hasOutputMatrix();
     numBanks = gD.numBanks();
     numInputs = gD.numInputsNorm();
     numOutputs = gD.numOutputs();
     midiThru = gD.midiThru();
 
-    #if defined(MIDI_COMMS)
-    if(midiThru)
+#if defined(MIDI_COMMS)
+    if (midiThru)
       MIDI.turnThruOn();             // Turn midi thru on, because configuration says so
     else
       MIDI.turnThruOff();            // Turn midi thru off, because configuration says so
-    #endif
-    
-//    ultrasonicSensorData = KMS::ultrasound();
-//    ultrasoundPresent = ultrasonicSensorData.mode() != KMS::M_OFF;
-//    if (ultrasoundPresent) {
-//      FilterClear();
-//      minMicroSecSensor = ultrasonicSensorData.dist_min() * US_ROUNDTRIP_CM;
-//      maxMicroSecSensor = ultrasonicSensorData.dist_max() * US_ROUNDTRIP_CM;
-//      usSensor.changeMaxDistance(ultrasonicSensorData.dist_max());
-//      sensorActive = false;
-//      pingSensorTimer = millis() + pingSensorInterval;
-//      pinMode(SensorEchoPin, INPUT_PULLUP);
-//      pinMode(SensorTriggerPin, OUTPUT);
-//      pinMode(ActivateSensorButtonPin, INPUT_PULLUP);
-//      pinMode(ActivateSensorLedPin, OUTPUT);
-//      digitalWrite(ActivateSensorLedPin, LOW);
-//    }
+#endif
+
+    //    ultrasonicSensorData = KMS::ultrasound();
+    //    ultrasoundPresent = ultrasonicSensorData.mode() != KMS::M_OFF;
+    //    if (ultrasoundPresent) {
+    //      FilterClear();
+    //      minMicroSecSensor = ultrasonicSensorData.dist_min() * US_ROUNDTRIP_CM;
+    //      maxMicroSecSensor = ultrasonicSensorData.dist_max() * US_ROUNDTRIP_CM;
+    //      usSensor.changeMaxDistance(ultrasonicSensorData.dist_max());
+    //      sensorActive = false;
+    //      pingSensorTimer = millis() + pingSensorInterval;
+    //      pinMode(SensorEchoPin, INPUT_PULLUP);
+    //      pinMode(SensorTriggerPin, OUTPUT);
+    //      pinMode(ActivateSensorButtonPin, INPUT_PULLUP);
+    //      pinMode(ActivateSensorLedPin, OUTPUT);
+    //      digitalWrite(ActivateSensorLedPin, LOW);
+    //    }
 
 #if !defined(MIDI_COMMS)
     Serial.print("Numero de bancos: "); Serial.println(numBanks);
     Serial.print("Numero de entradas: "); Serial.println(numInputs);
     Serial.print("Numero de salidas: "); Serial.println(numOutputs);
-    Serial.print("MIDI thru? "); Serial.println(gD.midiThru()? "SI":"NO");
+    Serial.print("MIDI thru? "); Serial.println(gD.midiThru() ? "SI" : "NO");
     Serial.print("Sensor mode: "); Serial.println(MODE_LABEL(ultrasonicSensorData.mode()));
 #endif
   }
@@ -335,10 +325,9 @@ void ResetConfig(bool newConfig) {
 #if !defined(MIDI_COMMS)
     Serial.print("Datos en EEPROM no válidos");
 #endif
-    // If there is no valid data on EEPROM, enter first-boot mode.
     firstBoot = true;
     packetSize = 57;
-  }  
+  }
   // Inicializar lecturas
   for (mux = 0; mux < NUM_MUX; mux++) {
     for (muxChannel = 0; muxChannel < NUM_MUX_CHANNELS; muxChannel++) {
@@ -362,7 +351,7 @@ void ResetConfig(bool newConfig) {
   changeDigOutState = true;
 }
 
-void StatusLEDupdate() {
+void blinkStatusLED() {
   static bool lastLEDState = LOW;
   static unsigned long millisPrev = 0;
   static bool firstTime = true;
@@ -376,9 +365,9 @@ void StatusLEDupdate() {
     LedWrite(7, !lastLEDState);
     //digitalWrite(13, !lastLEDState);
     lastLEDState = !lastLEDState;
-    if (lastLEDState == LOW) blinkStatusCount--;
-    if (!blinkStatusCount) {
-      blinkStatusLEDon = 0;
+    if (lastLEDState == LOW) blinkCountStatus--;
+    if (!blinkCountStatus) {
+      flagBlinkStatus = 0;
       firstTime = true;
     }
   }
@@ -387,17 +376,17 @@ void StatusLEDupdate() {
 
 void UpdateDigitalOutputs() {
   uint16_t dOut = 0;
-  
+
   if (newBank || changeDigOutState) {
     changeDigOutState = false;
 
-    if(newBank && !configMode){                                                  // If new bank flag is on
+    if (newBank && !configMode) {                                                // If new bank flag is on
       newBank = false;                                              // turn it off
-      for (int bankLED = 0; bankLED < MAX_BANKS; bankLED++){        // and cycle through the LEDs to check which bank is on and which one is off
-        if(currBank == bankLED){                                    // If the current bank matches this LED
-          LedWrite(7-bankLED, HIGH);                                  // turn this LED on.  (7-LED) because they are numbered backwards and LED 0 is on output 7 and so on...
-        }else{                                                      // If this LED does not match the current bank selected,
-          LedWrite(7-bankLED, LOW);                                   // turn this LED off.
+      for (int bankLED = 0; bankLED < MAX_BANKS; bankLED++) {       // and cycle through the LEDs to check which bank is on and which one is off
+        if (currBank == bankLED) {                                  // If the current bank matches this LED
+          LedWrite(7 - bankLED, HIGH);                                // turn this LED on.  (7-LED) because they are numbered backwards and LED 0 is on output 7 and so on...
+        } else {                                                     // If this LED does not match the current bank selected,
+          LedWrite(7 - bankLED, LOW);                                 // turn this LED off.
         }
       }
     }
@@ -405,9 +394,9 @@ void UpdateDigitalOutputs() {
     // Turn normal LEDs on or OFF
     for (dOut = 0; dOut < NUM_LEDS; dOut++) {                       // Cycle the rest of the LEDs for Miniblock
       if (digitalOutState[currBank][dOut] == OUT_ON)          // If this bank has this LED on, because the bank changed and it was originally on, or because it arrived a matching MIDI message
-        LedWrite(3-dOut, HIGH);                                 // turn this LED on. (3-LED) because they are numbered backwards, LED 0 is on output 3 and so on...
+        LedWrite(3 - dOut, HIGH);                               // turn this LED on. (3-LED) because they are numbered backwards, LED 0 is on output 3 and so on...
       else if (digitalOutState[currBank][dOut] == OUT_OFF)    // If this LED is meant to be off,
-        LedWrite(3-dOut, LOW);                                  // turn this LED off.
+        LedWrite(3 - dOut, LOW);                                // turn this LED off.
     }
   }
 }
@@ -417,10 +406,10 @@ void ToggleBlinkOutputs(void) {
   for (dOut = 0; dOut < NUM_LEDS; dOut++) {                       // Cycle through every LED
     if (digitalOutState[currBank][dOut] == OUT_BLINK) {     // If this output is set to blink
       if (outputBlinkState) {                                 // and it was on
-        LedWrite(3-dOut, LOW);                                  // turn it off.
+        LedWrite(3 - dOut, LOW);                                // turn it off.
       }
       else {                                                  // If it was off.
-        LedWrite(3-dOut, HIGH);                                 // turn it on.
+        LedWrite(3 - dOut, HIGH);                               // turn it on.
       }
     }
   }
@@ -439,7 +428,7 @@ void ReadMidi(void) {
     case midi::SystemExclusive:
       int sysexLength = 0;
       const byte *pMsg;
-    
+
       sysexLength = (int) MIDI.getSysExArrayLength();
       pMsg = MIDI.getSysExArray();
 
@@ -453,15 +442,15 @@ void ReadMidi(void) {
       if (sysexID[0] == 'Y' && sysexID[1] == 'T' && sysexID[2] == 'X') {
 
         if (command == CONFIG_MODE && !configMode) {           // Enter config mode
-          blinkStatusLEDon = 1;
-          blinkStatusCount = 1;
+          flagBlinkStatus = 1;
+          blinkCountStatus = 1;
           const byte configAckSysExMsg[5] = {'Y', 'T', 'X', CONFIG_ACK, 0};
           MIDI.sendSysEx(5, configAckSysExMsg, false);
           ResetConfig(CONFIG_ON);
         }
         else if (command == EXIT_CONFIG && configMode) {           // Enter config mode
-          blinkStatusLEDon = 1;
-          blinkStatusCount = 1;
+          flagBlinkStatus = 1;
+          blinkCountStatus = 1;
           const byte configAckSysExMsg[5] = {'Y', 'T', 'X', EXIT_CONFIG_ACK, 0};
           MIDI.sendSysEx(5, configAckSysExMsg, false);
           ResetConfig(CONFIG_OFF);
@@ -474,13 +463,13 @@ void ReadMidi(void) {
 
           KMS::io.write(packetSize * pMsg[5], pMsg + 6, sysexLength - 7); // pMsg has index in byte 6, total sysex packet has max.
           // |F0, 'Y' , 'T' , 'X', command, index, F7|
-          blinkStatusLEDon = 1;
-          blinkStatusCount = 1;
+          flagBlinkStatus = 1;
+          blinkCountStatus = 1;
 
           if (sysexLength < packetSize + 7) { // Last message?
             receivingSysEx = 0;
-            blinkStatusLEDon = 1;
-            blinkStatusCount = 3;
+            flagBlinkStatus = 1;
+            blinkCountStatus = 3;
             const byte dumpOkMsg[5] = {'Y', 'T', 'X', DUMP_OK, 0};
             MIDI.sendSysEx(5, dumpOkMsg, false);
             const byte configAckSysExMsg[5] = {'Y', 'T', 'X', EXIT_CONFIG_ACK, 0};
@@ -493,7 +482,7 @@ void ReadMidi(void) {
   }
 }
 #else
-void ReadSerial(){
+void ReadSerial() {
   char inChar = (char) Serial.read();
   if (inChar == 'c' && !configMode) {
     //configMode = true;
@@ -543,43 +532,43 @@ void HandleNotes() {
   }
   else {
     if (data2)
-      LedWrite(3-data1, HIGH);
+      LedWrite(3 - data1, HIGH);
     else
-      LedWrite(3-data1, LOW);
+      LedWrite(3 - data1, LOW);
   }
 }
 #endif
 
-void buttonScan(void){ 
-  static bool buttonPrevState[8] = {0,0,0,0,0,0,0,0};
+void pinReadInputs(void) {
+  static bool buttonPrevState[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   bool buttonPressed = digitalRead(inputCommonPin);   // Read common pin to know if there is a button pressed
-  if(buttonPressed){                                  // if common pin is HIGH, then there is actually a button pressed
-    Check = 1;                                          // First button to check is on pin 0 (Check is 00000001 right here) 
-    for(int j=0; j<8; j++){                             // then, to know which button was pressed, we need to cycle through every shift reg. pin
+  if (buttonPressed) {                                // if common pin is HIGH, then there is actually a button pressed
+    Check = 1;                                          // First button to check is on pin 0 (Check is 00000001 right here)
+    for (int j = 0; j < 8; j++) {                       // then, to know which button was pressed, we need to cycle through every shift reg. pin
       KMShield.digitalWritePortsKm(Check, Output);        // set a 1 to only one of the outputs
-    
-      if(digitalRead(inputCommonPin) == HIGH){             // If common pin is still HIGH, then this button was pressed
+
+      if (digitalRead(inputCommonPin) == HIGH) {           // If common pin is still HIGH, then this button was pressed
         bitWrite(newInputsState, j, 1);                     // Update inputs state variable with a 1 on bit j, which is the current output pin
       }
-      else{
+      else {
         bitWrite(newInputsState, j, 0);                     // else (if common pin is low), this button was not pressed
       }
 
-      Check = Check<<1;                                   // Shift the 1 one position to the left, so we check the next button. (Check is now 00000001 << j)
+      Check = Check << 1;                                 // Shift the 1 one position to the left, so we check the next button. (Check is now 00000001 << j)
     }// for
     KMShield.digitalWritePortsKm(0xFF, Output);         // After the whole check to every button, set all outputs to HIGH, so we can detect a new press
   }
-  else{
+  else {
     newInputsState = 0;
   }
 
   // Check then new state for buttons and act accordingly
-  for(int buttonPin = 0; buttonPin < 8; buttonPin++){                                 
+  for (int buttonPin = 0; buttonPin < 8; buttonPin++) {
     bool buttonState = bitRead(newInputsState, buttonPin);
-        
-    if(buttonState != buttonPrevState[buttonPin]){
-      if(buttonPin == SHIFTER_B0 || buttonPin == SHIFTER_B1 || buttonPin == SHIFTER_B2 || buttonPin == SHIFTER_B3){
-        byte bankPressed = 7-buttonPin;
+
+    if (buttonState != buttonPrevState[buttonPin]) {
+      if (buttonPin == SHIFTER_B0 || buttonPin == SHIFTER_B1 || buttonPin == SHIFTER_B2 || buttonPin == SHIFTER_B3) {
+        byte bankPressed = 7 - buttonPin;
         static bool bankButtonPressed;
         currBank = KMS::bank();
         if (buttonState && currBank != bankPressed && bankPressed <= KMS::realBanks()) {
@@ -587,43 +576,43 @@ void buttonScan(void){
           KMS::setBank(bankPressed);
           currBank = bankPressed;
           newBank = true;
-          #if !defined(MIDI_COMMS)
+#if !defined(MIDI_COMMS)
           Serial.println("");
           Serial.print("Current Bank: "); Serial.print(KMS::bank());
           Serial.print("\t   Previous bank: "); Serial.println(prevBank);
-          #endif
+#endif
         }
-      }else{                                                      // Not shifter
-        byte buttonPressed = 3-buttonPin;                           // Button 0 is on pin 3, button 1 is on pin 2, button 2 is on pin 1, button 3 is on pin 0.
-        byte inputIndex = 32+buttonPressed;
+      } else {                                                     // Not shifter
+        byte buttonPressed = 3 - buttonPin;                         // Button 0 is on pin 3, button 1 is on pin 2, button 2 is on pin 1, button 3 is on pin 0.
+        byte inputIndex = 32 + buttonPressed;
         KMS::InputNorm inputData = KMS::input(inputIndex);    // Button configuration will always be at position 32, 33, 34 and 35 for the bank.
         if (inputData.mode() != KMS::M_OFF) {
           bool toggle = inputData.toggle();                           // is the button set as toggle?
           if (buttonState) {    // If the button was pressed
             buttonStateBanks[currBank][buttonPressed] = !buttonStateBanks[currBank][buttonPressed];     // MODO TOGGLE: Cambia de 0 a 1, o viceversa
-                                                                                                        // MODO NORMAL: Cambia de 0 a 1
+            // MODO NORMAL: Cambia de 0 a 1
             InputChanged(inputIndex, inputData, !buttonStateBanks[currBank][buttonPressed]);
             //digitalOutState[currBank][buttonPressed] = OUT_ON;
           }
           else if (!buttonState && !toggle) {
             buttonStateBanks[currBank][buttonPressed] = 0;
             InputChanged(inputIndex, inputData, !buttonStateBanks[currBank][buttonPressed]);
-           // digitalOutState[currBank][buttonPressed] = OUT_OFF;
+            // digitalOutState[currBank][buttonPressed] = OUT_OFF;
           }
         }
-       // changeDigOutState = true;
+        // changeDigOutState = true;
       }
       buttonPrevState[buttonPin] = buttonState;
     }
   }
 }
 
-bool LedState(byte led){
+bool LedState(byte led) {
   return bitRead(Output, led);
 }
-void LedWrite(byte led, byte state){
+void LedWrite(byte led, byte state) {
   bitWrite(Output, led, state);
-  KMShield.digitalWritePortsKm(0xFF, Output); 
+  KMShield.digitalWritePortsKm(0xFF, Output);
 }
 
 //void ReadSensorUS() {
@@ -643,14 +632,14 @@ void LedWrite(byte led, byte state){
 //  else if (activateSensorButtonState == HIGH && activateSensorButtonPrevState == LOW) { // Si el botón previamente estaba en estado bajo, y ahora esta en estado alto, quiere decir que paso de estar presionado a no presionado
 //    activateSensorButtonPrevState = HIGH;                                  // Actualizo el estado previo
 //  }
-//  
+//
 //  if(firstRead){
-//    sensorLEDState = LOW; 
+//    sensorLEDState = LOW;
 //    activateSensorButtonPrevState = HIGH;
 //    activateSensorButtonState = HIGH;
 //    return;
 //  }
-//  
+//
 //  if (sensorActive) {                                     // Si el sensor está activado
 //    if (millis() >= pingSensorTimer) {   // y transcurrió el delay minimo entre lecturas
 //      pingSensorTimer += pingSensorInterval;
@@ -658,7 +647,7 @@ void LedWrite(byte led, byte state){
 //    }
 //  }else
 //    pingSensorTimer = millis() + pingSensorInterval;
-//  
+//
 //}
 //
 //void EchoCheck(){
@@ -667,14 +656,14 @@ void LedWrite(byte led, byte state){
 //    uSeg = usSensor.ping_result;
 //    uSeg = constrain(uSeg, minMicroSecSensor, maxMicroSecSensor);
 //    uint16_t sensorRange = maxMicroSecSensor - minMicroSecSensor;
-//    uint16_t usSensorValue = map(uSeg, minMicroSecSensor, maxMicroSecSensor, 0, sensorRange);  
-//    
+//    uint16_t usSensorValue = map(uSeg, minMicroSecSensor, maxMicroSecSensor, 0, sensorRange);
+//
 //    byte mode = ultrasonicSensorData.mode();
 //    byte midiChannel = ultrasonicSensorData.channel();
 //    byte param = ultrasonicSensorData.param_fine();
 //    byte minMidi = ultrasonicSensorData.param_min_coarse();
 //    byte maxMidi = ultrasonicSensorData.param_max_coarse();
-//    
+//
 //    if (minMidi < maxMidi)
 //      usSensorValue = map(usSensorValue,  0,
 //                                          sensorRange,
@@ -688,7 +677,7 @@ void LedWrite(byte led, byte state){
 //
 //    // FILTRO DE MEDIA MÓVIL PARA SUAVIZAR LA LECTURA
 //    usSensorValue = FilterGetNewAverage(usSensorValue);
-//    
+//
 //    // Detecto si cambió el valor filtrado, para no mandar valores repetidos
 //    if (usSensorValue != usSensorPrevValue) {
 //      usSensorPrevValue = usSensorValue;
@@ -718,7 +707,7 @@ void LedWrite(byte led, byte state){
 //    }
 //  }
 //  else{
-//    
+//
 //  }
 //}
 //
@@ -730,9 +719,9 @@ void LedWrite(byte led, byte state){
 //  filterIndex++;
 //  if (filterIndex == US_SENSOR_FILTER_SIZE) filterIndex = 0;  // faster than %
 //  // update count as last otherwise if( _cnt == 0) above will fail
-//  if (filterCount < US_SENSOR_FILTER_SIZE) 
+//  if (filterCount < US_SENSOR_FILTER_SIZE)
 //    filterCount++;
-//  if (filterCount == 0) 
+//  if (filterCount == 0)
 //    return NAN;
 //  return filterSum / filterCount;
 //}
@@ -752,18 +741,18 @@ void LedWrite(byte led, byte state){
 */
 void ReadInputs() {
   static uint16_t currAnalogValue = 0, prevAnalogValue = 0;
-  for (int inputIndex = 0; inputIndex < numInputs-4; inputIndex++) {
+  for (int inputIndex = 0; inputIndex < numInputs - 4; inputIndex++) {
     KMS::InputNorm inputData = KMS::input(inputIndex);
     mux = inputIndex < 16 ? MUX_A : MUX_B;           // MUX 0 or 1
     muxChannel = inputIndex % NUM_MUX_CHANNELS;         // CHANNEL 0-15
     if (inputData.mode() != KMS::M_OFF) {
       if (inputData.AD() == KMS::T_ANALOG) {
         KMShield.muxReadings[mux][muxChannel] = KMShield.analogReadKm(mux, muxChannel);           // Si es NRPN leer entradas analógicas 'KMShield.analogReadKm(N_MUX,N_CANAL)'
-        
+
         if (!firstRead && KMShield.muxReadings[mux][muxChannel] != KMShield.muxPrevReadings[mux][muxChannel]) {  // Si lo que leo no es ruido
-          InputChanged(inputIndex, inputData, KMShield.muxReadings[mux][muxChannel]);               // Enviar mensaje.
+          InputChanged(inputIndex, inputData, KMShield.muxReadings[mux][muxChannel]);                             // Enviar mensaje.
         }
-        else{
+        else {
           KMShield.muxPrevReadings[mux][muxChannel] = KMShield.muxReadings[mux][muxChannel];         // Almacenar lectura actual como anterior, para el próximo ciclo
           continue;
         }
@@ -776,11 +765,11 @@ void ReadInputs() {
         //Serial.print("Mux: "); Serial.print(mux); Serial.print("  Channel: "); Serial.println(channel);
         if (KMShield.muxReadings[mux][muxChannel] != KMShield.muxPrevReadings[mux][muxChannel]) {     // Me interesa la lectura, si cambió el estado del botón,
           KMShield.muxPrevReadings[mux][muxChannel] = KMShield.muxReadings[mux][muxChannel];             // Almacenar lectura actual como anterior, para el próximo ciclo
-          
+
           if (firstRead) continue;
           byte digInputIndex = muxChannel + mux * NUM_MUX_CHANNELS;
           if (!KMShield.muxReadings[mux][muxChannel]) {
-            
+
             digitalInputState[currBank][digInputIndex] = !digitalInputState[currBank][digInputIndex]; // MODO TOGGLE: Cambia de 0 a 1, o viceversa
             // MODO NORMAL: Cambia de 0 a 1
             InputChanged(inputIndex, inputData, !digitalInputState[currBank][digInputIndex]);
@@ -793,7 +782,7 @@ void ReadInputs() {
       }
     }
   }
-  if(firstRead) firstRead = false;
+  if (firstRead) firstRead = false;
 }
 
 void InputChanged(int numInput, const KMS::InputNorm &inputData, uint16_t rawValue) {
@@ -804,78 +793,73 @@ void InputChanged(int numInput, const KMS::InputNorm &inputData, uint16_t rawVal
   int16_t minMidi = inputData.param_min();
   int16_t maxMidi = inputData.param_max();
   int16_t minMidiNRPN, maxMidiNRPN;
-  uint16_t maxMinDiff;
   uint16_t mapValue, constrainedValue;
   uint16_t noiseTh;
   static uint16_t prevValue[NUM_MUX * NUM_MUX_CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   static uint16_t prevRawValue[NUM_MUX * NUM_MUX_CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};                                                           
+                                                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};                                    
 
-  #define CONST_LOW_LIMIT   3
-  #define CONST_HIGH_LIMIT  1020
-  
-  if(!configMode){
+  #define CONST_LOW_LIMIT   2
+  #define CONST_HIGH_LIMIT  1021
+                                                                                       
+  if (!configMode) {
     if (analog) {
       constrainedValue = constrain(rawValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT);
-      if (IsNoise(constrainedValue, prevRawValue[numInput], numInput, 2))   // Pre-filter with raw 10 bit value
-        return;
+      if (IsNoise(constrainedValue, prevRawValue[numInput], numInput, 2, true)) 
+        return;                                                           
       prevRawValue[numInput] = constrainedValue;  
-      Serial.print("Raw value: "); Serial.print(constrainedValue); Serial.println();
-      
-      if (mode == KMS::M_NRPN){
+      //Serial.print("Raw value: "); Serial.print(constrainedValue); Serial.println();
+      if (mode == KMS::M_NRPN) {
         minMidiNRPN = pgm_read_word_near(KMS::nrpn_min_max + minMidi);
         maxMidiNRPN = pgm_read_word_near(KMS::nrpn_min_max + maxMidi);
 
-        mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, minMidiNRPN, maxMidiNRPN); 
+        int maxMinDiff = maxMidiNRPN - minMidiNRPN;
+        byte maxMidiNRPNadd = abs(maxMinDiff) >> 10;
+
+        mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, minMidiNRPN, maxMidiNRPN); // map() only maps correctly if fromHigh and toHigh are +1 the actual mapped values
+
+        noiseTh = abs(maxMinDiff) >> 8;          // divide range to get noise threshold. Max th is 127/4 = 64 : Min th is 0.
         
-        if(minMidi < maxMidi){
-          maxMinDiff = maxMidiNRPN - minMidiNRPN;
-          //if (mapValue == maxMidiNRPN-1 && maxMinDiff > 10000) mapValue += 1; 
+        if(maxMinDiff < 1023){
+          if (IsNoise(mapValue, prevValue[numInput], numInput, noiseTh, false))
+            return;
         }
-        else{
-          maxMinDiff = minMidiNRPN - maxMidiNRPN ;
-          //if (mapValue == minMidiNRPN-1 && maxMinDiff > 10000) mapValue += 1;
-        }
-        
-        noiseTh = maxMinDiff >> 8;          // divide range to get noise threshold. Max th is 127/4 = 64 : Min th is 0.
-        
-        if (IsNoise(mapValue, prevValue[numInput], numInput, noiseTh)) 
-          return;
-      }else{
-        
-        if(minMidi < maxMidi)
-          mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, minMidi, maxMidi); 
-        else
-          mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, minMidi, maxMidi); 
+      } else {
+//        if (minMidi < maxMidi)
+//          mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, minMidi, maxMidi);
+//        else
+        mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, minMidi, maxMidi);
         int maxMinDiff = maxMidi - minMidi;
         noiseTh = abs(maxMinDiff) >> 6;          // divide range to get noise threshold. Max th is 127/64 = 2 : Min th is 0.
-        if (IsNoise(mapValue, prevValue[numInput], numInput, 0)) 
+        if (IsNoise(mapValue, prevValue[numInput], numInput, 0, false))
           return;
       }
       prevValue[numInput] = mapValue;   // Save value to previous data array
     }
     else {      // DIGITAL INPUTS
-      if (mode == KMS::M_NRPN){
-        minMidiNRPN = pgm_read_word_near(KMS::nrpn_min_max + minMidi);
-        maxMidiNRPN = pgm_read_word_near(KMS::nrpn_min_max + maxMidi);
-        if (constrainedValue)   mapValue = minMidiNRPN;   // If value is != 0, then button is off
-        else                    mapValue = maxMidiNRPN;   // If value is == 0, the button is on (active LOW)
-      }else{
-        if (constrainedValue)   mapValue = minMidi;   // If value is != 0, then button is off
-        else                    mapValue = maxMidi;   // If value is == 0, the button is on (active LOW)
-      }
-    }  
+      if (rawValue)  mapValue = minMidi;   // If value is != 0, then button is off
+      else           mapValue = maxMidi;   // If value is == 0, the button is on (active LOW)
+    }
   }
-  
+
   // TX LED ON
   // LedWrite(0, HIGH);
 #if defined(MIDI_COMMS)
   if (configMode) { // CONFIG MODE MESSAGES
-    mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, 0, 127);
-    if (IsNoise(mapValue, prevValue[numInput], numInput, 1)) 
-      return;
-    prevValue[numInput] = mapValue;   // Save value to previous data array
+    if(analog){
+      constrainedValue = constrain(rawValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT);
+      if (IsNoise(constrainedValue, prevRawValue[numInput], numInput, 2, true)) 
+        return;                                                           
+      prevRawValue[numInput] = constrainedValue;
+      mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, 0, 127);
+      if (IsNoise(mapValue, prevValue[numInput], numInput, 0, false))
+        return;
+      prevValue[numInput] = mapValue;   // Save value to previous data array
+    }else {      // DIGITAL INPUTS
+      if (rawValue)  mapValue = 0;   // If value is != 0, then button is off
+      else           mapValue = 127;   // If value is == 0, the button is on (active LOW)
+    }
     MIDI.sendControlChange( numInput, mapValue, 1);
   }
   else {            // NORMAL MODE
@@ -890,72 +874,88 @@ void InputChanged(int numInput, const KMS::InputNorm &inputData, uint16_t rawVal
         MIDI.sendControlChange( 6, (mapValue >> 7) & 0x7F, channel);
         MIDI.sendControlChange( 38, (mapValue & 0x7F), channel); break;
       case KMS::M_PROGRAM_MINUS:
-        if(currentProgram[currBank][channel-1] > 0){
-          currentProgram[currBank][channel-1]--;
-          MIDI.sendProgramChange(currentProgram[currBank][channel-1], channel); 
+        if (currentProgram[currBank][channel - 1] > 0) {
+          currentProgram[currBank][channel - 1]--;
+          MIDI.sendProgramChange(currentProgram[currBank][channel - 1], channel);
         } break;
       case KMS::M_PROGRAM:
         if (!analog && mapValue > 0) {
           MIDI.sendProgramChange( param, channel);
-        } 
-        else if (analog){
+        }
+        else if (analog) {
           MIDI.sendProgramChange( mapValue, channel);
         } break;
       case KMS::M_PROGRAM_PLUS:
-        if(currentProgram[currBank][channel-1] < 127){
-          currentProgram[currBank][channel-1]++;
-          MIDI.sendProgramChange(currentProgram[currBank][channel-1], channel);
+        if (currentProgram[currBank][channel - 1] < 127) {
+          currentProgram[currBank][channel - 1]++;
+          MIDI.sendProgramChange(currentProgram[currBank][channel - 1], channel);
         } break;
       default: break;
     }
   }
-#else 
+#else
   if (configMode) { // CONFIG MODE MESSAGES
-    mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, 0, 127);
-    if (IsNoise(mapValue, prevValue[numInput], numInput, 1)) 
-      return;
-    prevValue[numInput] = mapValue;   // Save value to previous data array  
+    if(analog){
+      constrainedValue = constrain(rawValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT);
+      if (IsNoise(constrainedValue, prevRawValue[numInput], numInput, 2, true)) 
+        return;                                                           
+      prevRawValue[numInput] = constrainedValue;
+      mapValue = map(constrainedValue, CONST_LOW_LIMIT, CONST_HIGH_LIMIT, 0, 127);    
+      if (IsNoise(mapValue, prevValue[numInput], numInput, 0, false))
+        return;
+    }else {      // DIGITAL INPUTS
+      if (rawValue)  mapValue = 0;   // If value is != 0, then button is off
+      else           mapValue = 127;   // If value is == 0, the button is on (active LOW)
+    }
   }
-  Serial.print("Channel: "); Serial.print(channel); Serial.print("\t");
-  Serial.print("Tipo: "); Serial.print(inputData.AD() ? "Analog" : "Digital"); Serial.print("\t");
-  Serial.print("Min: "); Serial.print(mode == KMS::M_NRPN ? minMidiNRPN : minMidi); Serial.print("\t");
-  Serial.print("Max: "); Serial.print(mode == KMS::M_NRPN ? maxMidiNRPN : maxMidi); Serial.print("\t");
-  Serial.print("Modo: "); Serial.print(MODE_LABEL(mode)); Serial.print("\t");
-  Serial.print("Parameter: "); Serial.print((inputData.param_coarse() << 7) | inputData.param_fine()); 
-  Serial.print("\tValor: "); Serial.print(mapValue); Serial.print("\tValor original: "); Serial.print(constrainedValue);  Serial.print("\tValor anterior: "); Serial.println(prevValue[numInput]); 
+  Serial.print("Channel: "); Serial.print(channel);
+  Serial.print("    Tipo: "); Serial.print(inputData.AD() ? "Analog" : "Digital");
+  Serial.print("    Min: "); Serial.print(mode == KMS::M_NRPN ? minMidiNRPN : minMidi);
+  Serial.print("    Max: "); Serial.print(mode == KMS::M_NRPN ? maxMidiNRPN : maxMidi); 
+  Serial.print("    Modo: "); Serial.print(MODE_LABEL(mode)); 
+  Serial.print("    Parameter: "); Serial.print((inputData.param_coarse() << 7) | inputData.param_fine());
+  Serial.print("    Valor: "); Serial.print(mapValue); 
+  Serial.print("    Valor original: "); Serial.println(rawValue);  
+  prevValue[numInput] = mapValue;   // Save value to previous data array
 #endif
   // TX LED OFF
   //LedWrite(0, LOW);
-  
+
   return;
 }
 
 /*
-   Funcion para filtrar  el ruido analógico de los pontenciómetros. Filtro por histéresis que analiza si el valor crece o decrece, y en el caso de un cambio de dirección,
+   Funcion para filtrar el ruido analógico de los pontenciómetros. Analiza si el valor crece o decrece, y en el caso de un cambio de dirección,
    decide si es ruido o no, si hubo un cambio superior al valor anterior más el umbral de ruido.
 
    Recibe: -
 */
-uint16_t IsNoise(uint16_t currentValue, uint16_t prevValue, uint16_t input, byte noiseTh) {
-  static bool upOrDown[NUM_MUX * NUM_MUX_CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint16_t IsNoise(uint16_t currentValue, uint16_t prevValue, uint16_t input, byte noiseTh, bool raw) {
+  static bool upOrDownRaw[NUM_MUX * NUM_MUX_CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static bool upOrDownOutput[NUM_MUX * NUM_MUX_CHANNELS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};                                                      
 
-  if (upOrDown[input] == ANALOG_UP) {
+  bool directionOfChange = upOrDownRaw[input] ? raw == true : upOrDownOutput[input];
+
+  if (directionOfChange == ANALOG_UP) {
     if (currentValue > prevValue) {            // Si el valor está creciendo, y la nueva lectura es mayor a la anterior,
       return 0;                        // no es ruido.
     }
     else if (currentValue < prevValue - noiseTh) { // Si el valor está creciendo, y la nueva lectura menor a la anterior menos el UMBRAL
-      upOrDown[input] = ANALOG_DOWN;                                     // se cambia el estado a DECRECIENDO y
-      return 0;                                                               // no es ruido.
+      if(raw) upOrDownRaw[input] = ANALOG_DOWN;        // se cambia el estado a DECRECIENDO y
+      else    upOrDownOutput[input] = ANALOG_DOWN;
+      return 0;                                       // no es ruido.
     }
   }
-  if (upOrDown[input] == ANALOG_DOWN) {
+  else if (directionOfChange == ANALOG_DOWN) {
     if (currentValue < prevValue) { // Si el valor está decreciendo, y la nueva lectura es menor a la anterior,
       return 0;                                        // no es ruido.
     }
     else if (currentValue > prevValue + noiseTh) {  // Si el valor está decreciendo, y la nueva lectura mayor a la anterior mas el UMBRAL
-      upOrDown[input] = ANALOG_UP;                                       // se cambia el estado a CRECIENDO y
-      return 0;                                                               // no es ruido.
+      if(raw) upOrDownRaw[input] = ANALOG_UP;        // se cambia el estado a CRECIENDO y
+      else    upOrDownOutput[input] = ANALOG_UP;
+      return 0;                                      // no es ruido.
     }
   }
   return 1;         // Si todo lo anterior no se cumple, es ruido.
