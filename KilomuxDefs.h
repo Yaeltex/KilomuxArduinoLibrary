@@ -80,9 +80,9 @@ const unsigned char PS_128 = (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);  // PS_
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 // Ultrasonic Sensor pins
-const int ActivateSensorButtonPin = 10;
-const int ActivateSensorLedPin = 11;
-const int SensorEchoPin = 12;
-const int SensorTriggerPin = 13;
+const int ActivateSensorButtonPin = 6;
+const int ActivateSensorLedPin = 7;
+const int SensorEchoPin = 8;
+const int SensorTriggerPin = 9;
 	
 #endif
