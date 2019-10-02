@@ -65,9 +65,9 @@ private:
     const int InMuxB = A1;
 
   	// Shift register lines
-  	const int DataPin = 6;                           // Data Pin (DS) connected to pin 14 of 74HC595
-  	const int LatchPin = 7;                          // Latch Pin (ST_CP) connected to pin 12 of 74HC595
-  	const int ClockPin = 8;                          // Clock Pin (SH_CP) connected to pin 11 of 74HC595
+  	const int DataPin = 11;                           // Data Pin (DS) connected to pin 14 of 74HC595
+  	const int LatchPin = 10;                          // Latch Pin (ST_CP) connected to pin 12 of 74HC595
+  	const int ClockPin = 13;                          // Clock Pin (SH_CP) connected to pin 11 of 74HC595
 
     bool outputState[NUM_OUTPUTS];                // State of every output
 

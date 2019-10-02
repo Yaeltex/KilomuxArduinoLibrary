@@ -27,6 +27,7 @@
 
 #include "Arduino.h"
 #include "Kilomux.h"
+#include <SPI.h>
 
 /*
   Method:         Kilomux
@@ -73,7 +74,7 @@ void Kilomux::init(void){
                                           // PS_64 (250KHz or 16666 samples/s)
                                           // PS_128 (125KHz or 8620 samples/s)
 
-	
+	 SPI.begin();
     clearRegisters595();                  // Set all outputs to LOW
     writeRegisters595();                  // Update outputs
 }
@@ -127,10 +128,10 @@ void Kilomux::digitalWritePortKm(byte portState, int port){
 */
 void Kilomux::digitalWritePortsKm(byte portState1, byte portState2){
   for(int output = 0;  output < 8; output++){
-	outputState[OutputMapping[output]] = portState1&(1<<(7-output));
+	 outputState[OutputMapping[output]] = portState1&(1<<(7-output));
   }
   for(int output = 8;  output < 16; output++){
-	outputState[OutputMapping[output]] = portState2&(1<<(15-output));
+	 outputState[OutputMapping[output]] = portState2&(1<<(15-output));
   }
   writeRegisters595();
   return;
@@ -277,14 +278,15 @@ void Kilomux::clearRegisters595(void) {
 void Kilomux::writeRegisters595() {
   digitalWrite(LatchPin, LOW);                  // Latch line goes LOW to inform the IC that data will start to flow into it.
 
-  for (int i = NUM_OUTPUTS - 1; i >=  0; i--) {    // Cycle through all outputs
-    digitalWrite(ClockPin, LOW);                  	// "Manual" clock signal goes LOW
+  // for (int i = NUM_OUTPUTS - 1; i >=  0; i--) {    // Cycle through all outputs
+  //   digitalWrite(ClockPin, LOW);                  	// "Manual" clock signal goes LOW
 
-    int val = outputState[i];                       // Each output state is recovered
+  //   int val = outputState[i];                       // Each output state is recovered
 
-    digitalWrite(DataPin, val);                   	// And written to the data signal
-    digitalWrite(ClockPin, HIGH);                 	// "Manual" clock signal goes HIGH
-  }
+  //   digitalWrite(DataPin, val);                   	// And written to the data signal
+  //   digitalWrite(ClockPin, HIGH);                 	// "Manual" clock signal goes HIGH
+  // }
+  SPI.transfer(outputState);
   digitalWrite(LatchPin, HIGH);                 // Latch line goes HIGH to inform the IC that data is over.
 }
 
