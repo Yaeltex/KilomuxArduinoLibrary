@@ -46,7 +46,7 @@ Kilomux::Kilomux(){
   Returns:        void
 */
 void Kilomux::init(void){
-	// Set output pins for shift register
+  // Set output pins for shift register
     pinMode(LatchPin, OUTPUT);
     pinMode(DataPin, OUTPUT);
     pinMode(ClockPin, OUTPUT);
@@ -56,7 +56,7 @@ void Kilomux::init(void){
     pinMode(_S1, OUTPUT);
     pinMode(_S2, OUTPUT);
     pinMode(_S3, OUTPUT);
-											  
+                        
     // Set every reading to 0
     for (int mux = 0; mux < NUM_MUX; mux++) {
       for (int chan = 0; chan < NUM_MUX_CHANNELS; chan++) {
@@ -68,13 +68,13 @@ void Kilomux::init(void){
        outputState[output] = 0;
     }
     
-	// This method sets the ADC prescaler, to change the sample rate
+  // This method sets the ADC prescaler, to change the sample rate
     setADCprescaler(PS_16);               // PS_16 (1MHz or 50000 samples/s)
                                           // PS_32 (500KHz or 31250 samples/s)
                                           // PS_64 (250KHz or 16666 samples/s)
                                           // PS_128 (125KHz or 8620 samples/s)
 
-	 SPI.begin();
+   SPI.begin();
     clearRegisters595();                  // Set all outputs to LOW
     writeRegisters595();                  // Update outputs
 }
@@ -99,19 +99,19 @@ void Kilomux::digitalWriteKm(int output, int state){
   Method:         digitalWritePortKm
   Description:    Set the state of an entire output port (8 pins of the 10-pin outpute headers on the shield)
   Parameters:
-                  portState - 	Byte containing the state of the port to be set. MSB is output 1 and LSB is output 8 of the port
-								portState -> B 1-0-0-1-0-1-1-1
-								outputs   ->   1-2-3-4-5-6-7-8
-                  port  - 	  	Number of output port to set (1 or 2)
+                  portState -   Byte containing the state of the port to be set. MSB is output 1 and LSB is output 8 of the port
+                portState -> B 1-0-0-1-0-1-1-1
+                outputs   ->   1-2-3-4-5-6-7-8
+                  port  -       Number of output port to set (1 or 2)
   Returns:        void
 */
 void Kilomux::digitalWritePortKm(byte portState, int port){
   if (port == 1 || port == 2){
-	  for(int output = 0;  output < 8; output++){
-		outputState[OutputMapping[output + (port-1)*8]] = portState&(1<<(7-output));
-	  }
-	  writeRegisters595();
-	}
+    for(int output = 0;  output < 8; output++){
+    outputState[OutputMapping[output + (port-1)*8]] = portState&(1<<(7-output));
+    }
+    writeRegisters595();
+  }
   return;
 
 }
@@ -120,18 +120,18 @@ void Kilomux::digitalWritePortKm(byte portState, int port){
   Method:         digitalWritePortKm
   Description:    Set the state of an entire output port (8 pins of the 10-pin outpute headers on the shield)
   Parameters:
-                  portState - 	Byte containing the state of the port to be set. MSB is output 1 and LSB is output 8 of the port
-								portState -> B 1-0-0-1-0-1-1-1
-								outputs   ->   1-2-3-4-5-6-7-8
-                  port  - 	  	Number of output port to set (1 or 2)
+                  portState -   Byte containing the state of the port to be set. MSB is output 1 and LSB is output 8 of the port
+                portState -> B 1-0-0-1-0-1-1-1
+                outputs   ->   1-2-3-4-5-6-7-8
+                  port  -       Number of output port to set (1 or 2)
   Returns:        void
 */
 void Kilomux::digitalWritePortsKm(byte portState1, byte portState2){
   for(int output = 0;  output < 8; output++){
-	 outputState[OutputMapping[output]] = portState1&(1<<(7-output));
+   outputState[OutputMapping[output]] = portState1&(1<<(7-output));
   }
   for(int output = 8;  output < 16; output++){
-	 outputState[OutputMapping[output]] = portState2&(1<<(15-output));
+   outputState[OutputMapping[output]] = portState2&(1<<(15-output));
   }
   writeRegisters595();
   return;
@@ -158,8 +158,8 @@ int Kilomux::digitalReadKm(int mux, int chan){
     }
     else return -1;     // Return ERROR
 
-	PORTD &= 0xC3;
-	PORTD |= chan<<2;
+  PORTD &= 0xC3;
+  PORTD |= chan<<2;
 
     switch (mux) {
         case MUX_A:
@@ -196,19 +196,19 @@ int Kilomux::digitalReadKm(int mux, int chan, int pullup){
     }
     else return -1;     // Return ERROR
 
-	PORTD &= 0xC3;
-	PORTD |= chan<<2;
-	
+  PORTD &= 0xC3;
+  PORTD |= chan<<2;
+  
     switch (mux) {
         case MUX_A:
             pinMode(MUX_A_PIN, INPUT);                // These two lines set the analog input pullup resistor
             digitalWrite(MUX_A_PIN, HIGH);            
-            digitalState = digitalRead(InMuxA);		  // Read mux pin
+            digitalState = digitalRead(InMuxA);     // Read mux pin
             break;
         case MUX_B:
             pinMode(MUX_B_PIN, INPUT);                // These two lines set the analog input pullup resistor
             digitalWrite(MUX_B_PIN, HIGH);            
-            digitalState = digitalRead(InMuxB);		  // Read mux pin
+            digitalState = digitalRead(InMuxB);     // Read mux pin
             break;
 
         default:
@@ -238,8 +238,8 @@ int Kilomux::analogReadKm(int mux, int chan){
     }
     else return -1;       // Return ERROR
 
-	PORTD &= 0xC3;
-	PORTD |= chan<<2;
+  PORTD &= 0xC3;
+  PORTD |= chan<<2;
 
     switch (mux) {
         case MUX_A:
@@ -279,14 +279,15 @@ void Kilomux::writeRegisters595() {
   digitalWrite(LatchPin, LOW);                  // Latch line goes LOW to inform the IC that data will start to flow into it.
 
   // for (int i = NUM_OUTPUTS - 1; i >=  0; i--) {    // Cycle through all outputs
-  //   digitalWrite(ClockPin, LOW);                  	// "Manual" clock signal goes LOW
+  //   digitalWrite(ClockPin, LOW);                   // "Manual" clock signal goes LOW
 
   //   int val = outputState[i];                       // Each output state is recovered
 
-  //   digitalWrite(DataPin, val);                   	// And written to the data signal
-  //   digitalWrite(ClockPin, HIGH);                 	// "Manual" clock signal goes HIGH
+  //   digitalWrite(DataPin, val);                    // And written to the data signal
+  //   digitalWrite(ClockPin, HIGH);                  // "Manual" clock signal goes HIGH
   // }
-  SPI.transfer(outputState);
+  SPI.transfer(outputState>>8);
+  SPI.transfer(outputState&0xFF);
   digitalWrite(LatchPin, HIGH);                 // Latch line goes HIGH to inform the IC that data is over.
 }
 
