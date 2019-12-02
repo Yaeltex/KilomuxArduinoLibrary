@@ -158,8 +158,13 @@ int Kilomux::digitalReadKm(int mux, int chan){
     }
     else return -1;     // Return ERROR
 
+  uint8_t oldSREG = SREG;
+  cli();
+
   PORTD &= 0xC3;
   PORTD |= chan<<2;
+
+  SREG = oldSREG;
 
     switch (mux) {
         case MUX_A:
@@ -195,10 +200,15 @@ int Kilomux::digitalReadKm(int mux, int chan, int pullup){
       else return -1;   // Return ERROR
     }
     else return -1;     // Return ERROR
+  
+  uint8_t oldSREG = SREG;
+  cli();
 
   PORTD &= 0xC3;
   PORTD |= chan<<2;
-  
+
+  SREG = oldSREG;
+
     switch (mux) {
         case MUX_A:
             pinMode(MUX_A_PIN, INPUT);                // These two lines set the analog input pullup resistor
@@ -238,8 +248,13 @@ int Kilomux::analogReadKm(int mux, int chan){
     }
     else return -1;       // Return ERROR
 
+  uint8_t oldSREG = SREG;
+  cli();
+
   PORTD &= 0xC3;
   PORTD |= chan<<2;
+
+  SREG = oldSREG;
 
     switch (mux) {
         case MUX_A:
